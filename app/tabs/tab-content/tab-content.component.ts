@@ -1,24 +1,38 @@
-import {Component, ContentChild, OnInit, TemplateRef, ViewChild} from '@angular/core';
+import {
+  AfterContentInit,
+  Component,
+  ContentChildren,
+  QueryList,
+  TemplateRef,
+  ViewChild
+} from '@angular/core';
 import {LazyTabContentDirective} from "../lazy-tab-content/lazy-tab-content.directive";
 
 @Component({
   selector: 'tab-content',
   templateUrl: './tab-content.component.html',
 })
-export class TabContentComponent implements OnInit {
+export class TabContentComponent implements AfterContentInit {
 
   content: TemplateRef<any> | null = null;
 
-  @ContentChild(LazyTabContentDirective, {read: TemplateRef, static: true})
-  private explicitContent: TemplateRef<any>;
+  // используем @ContentChildren вместо @ContentChild, т.к. нам нужен LazyTabContentDirective на верхнем уровне.
+  // если будем использовать @ContentChild и внутри вкладки будет другой блок tabs, то @ContentChild может найти LazyTabContentDirective
+  // внутри вложенного tabs и тогда будет ошибка
+  @ContentChildren(LazyTabContentDirective)
+  private explicitContent: QueryList<LazyTabContentDirective>;
 
   @ViewChild(TemplateRef, {static: true})
   private implicitContent!: TemplateRef<any>;
 
   constructor() { }
 
-  ngOnInit(): void {
-    this.content = this.explicitContent || this.implicitContent;
+  ngAfterContentInit(): void {
+    if (this.explicitContent.length) {
+      this.content = this.explicitContent.first.template;
+    } else {
+      this.content = this.implicitContent;
+    }
   }
 
 }
